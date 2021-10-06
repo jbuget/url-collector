@@ -3,12 +3,6 @@
   "version": "0.0.1",
   "description": "A simple Node crawling application (CLI and lib) that collects links URL from a root one",
   "main": "index.js",
-  "scripts": {
-    "prebuild": "node -p \"'export const LIB_VERSION = ' + JSON.stringify(require('./package.json').version) + ';'\" > src/version.ts",
-    "build": "tsc",
-    "start": "npm run build && node build",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jbuget/url-collector.git"
@@ -24,9 +18,26 @@
     "url": "https://github.com/jbuget/url-collector/issues"
   },
   "homepage": "https://github.com/jbuget/url-collector#readme",
+  "pkg": {
+    "scripts": "dist/**/*.js"
+  },
+  "bin": {
+    "url-collector": "./dist/index.js"
+  },
+  "scripts": {
+    "prebuild": "node -p \"'export const LIB_VERSION = ' + JSON.stringify(require('./package.json').version) + ';'\" > src/version.ts",
+    "build": "tsc",
+    "start": "npm run build && node build",
+    "test": "echo \"Error: no test specified\"",
+    "dist": "rm -rf dist && npm run build && cp -R build dist && pkg . --output dist/url-collector",
+    "preversion": "./scripts/preversion.sh && npm run build && npm test",
+    "version": "npm run dist && git add -A dist src/version.ts",
+    "postversion": "git push && git push --tags"
+  },
   "devDependencies": {
     "@types/node": "^16.10.3",
     "commander": "^8.2.0",
+    "pkg": "^5.3.3",
     "typescript": "^4.4.3"
   }
 }
