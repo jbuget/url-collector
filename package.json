@@ -4,6 +4,8 @@
   "description": "A simple Node crawling application (CLI and lib) that collects links URL from a root one",
   "main": "index.js",
   "scripts": {
+    "build": "tsc",
+    "start": "npm run build && node build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
