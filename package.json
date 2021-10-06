@@ -1,6 +1,6 @@
 {
   "name": "url-collector",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "A simple Node crawling application (CLI and lib) that collects links URL from a root one",
   "main": "index.js",
   "repository": {
