@@ -106,3 +106,5 @@ typings/
 build
 
 .idea
+
+tmp

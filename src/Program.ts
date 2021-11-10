@@ -23,39 +23,29 @@ export default class Program {
 
     const url = options.url;
     if (!url) {
-      throw "Please provide a URL as the last argument";
+      throw 'Please provide a URL as the last argument';
     }
 
     // Treatment
     const browser = await puppeteer.launch({
-      headless: false,
+      headless: true,
       ignoreHTTPSErrors: true
     });
     const page = await browser.newPage();
 
     await page.setViewport({
-      width: 1680,
+      width: 1920,
       height: 1250,
     });
     await page.goto(url);
 
-    await page.waitForTimeout(30000);
+    await page.waitForTimeout(500);
 
-    // @ts-ignore
     const hrefs = await page.evaluate(
-      () => Array.from(
+      async () => Array.from(
         // @ts-ignore
         document.querySelectorAll('a[href]'),
-        // @ts-ignore
-        a => a.getAttribute('href')
-      )
-    );
-    const srcs = await page.evaluate(
-      () => Array.from(
-        // @ts-ignore
-        document.querySelectorAll('img[src]'),
-        // @ts-ignore
-        (img) => img.getAttribute('src')
+        (a: any) => a.getAttribute('href')
       )
     );
 
@@ -64,8 +54,16 @@ export default class Program {
     // Output
     let links: string[] = [];
     let i = 1;
-    links = links.concat(hrefs.filter((src) => src.startsWith('http')));
-    links = links.concat(srcs.filter((src) => src.startsWith('http')));
+    // @ts-ignore
+    links = links.concat(hrefs.map((href: string): string => {
+      if (href.startsWith('http://') || href.startsWith('https://')) {
+        return href;
+      }
+      if (href.startsWith('/')) {
+        return url + href;
+      }
+      return '';
+    }));
 
     const log = fs.createWriteStream('tmp/links.csv', { flags: 'a' });
     for (let link of links) {
@@ -73,6 +71,5 @@ export default class Program {
     }
     log.end();
     console.log('added lines = ' + i);
-
   }
 }
