@@ -21,10 +21,11 @@ export default class Program {
     this._command.parse(argv);
     const options = this._command.opts();
 
-    const url = options.url;
+    let url = options.url;
     if (!url) {
       throw 'Please provide a URL as the last argument';
     }
+    url = url.replace(/\/$/, '');
 
     // Treatment
     const browser = await puppeteer.launch({
@@ -39,8 +40,6 @@ export default class Program {
     });
     await page.goto(url);
 
-    await page.waitForTimeout(500);
-
     const hrefs = await page.evaluate(
       async () => Array.from(
         // @ts-ignore
@@ -51,25 +50,21 @@ export default class Program {
 
     await browser.close();
 
-    // Output
-    let links: string[] = [];
-    let i = 1;
-    // @ts-ignore
-    links = links.concat(hrefs.map((href: string): string => {
-      if (href.startsWith('http://') || href.startsWith('https://')) {
-        return href;
+    let links: string[] = hrefs.reduce((accumulatedLinks: string[], href: string) => {
+      if (/^((http|https):\/\/)/.test(href)) {
+        accumulatedLinks.push(href);
       }
       if (href.startsWith('/')) {
-        return url + href;
+        accumulatedLinks.push(url + href);
       }
-      return '';
-    }));
+      return accumulatedLinks;
+    }, []);
 
+    // Output
     const log = fs.createWriteStream('tmp/links.csv', { flags: 'a' });
     for (let link of links) {
-      log.write(`${i++};${link}\n`);
+      log.write(`${link}\n`);
     }
     log.end();
-    console.log('added lines = ' + i);
   }
 }
