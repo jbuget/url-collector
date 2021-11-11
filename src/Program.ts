@@ -15,6 +15,7 @@ export default class Program {
     this._command
       .version(this._version)
       .requiredOption('-u, --url <url>', 'URL to crawl')
+      .requiredOption('-o, --output <url>', 'specify the output file')
       .option('-s, --screenshot <screenshot>', 'specify the screenshot filepath');
     this._urlRegister = new UrlRegister();
   }
@@ -32,8 +33,9 @@ export default class Program {
 
     // Treatment
     const browser = await puppeteer.launch({
-      headless: true,
-      ignoreHTTPSErrors: true
+      headless: false,
+      ignoreHTTPSErrors: true,
+      devtools: true
     });
     const page = await browser.newPage();
 
@@ -41,12 +43,18 @@ export default class Program {
 
     await page.goto(url);
 
-    const anchors = await page.evaluate(
-      async () => Array.from(
-        // @ts-ignore
-        document.querySelectorAll('a[href]'),
-        (anchor: any) => anchor.getAttribute('href')
-      )
+    const anchors: string[] = await page.evaluate(
+      () => {
+        /*
+          ⚠️ From here you are not in Node but in the browser.
+          Set `devtools: true` in `puppeteer.launch` options to be able to debug.
+        */
+        return Array.from(
+          // @ts-ignore
+          document.querySelectorAll('a[href]'),
+          (anchor: any) => anchor.getAttribute('href')
+        );
+      }
     );
 
     await browser.close();
@@ -61,8 +69,8 @@ export default class Program {
     });
 
     // Output
-    const log = fs.createWriteStream('tmp/links.csv', { flags: 'a' });
-    for (let url of this._urlRegister.getAll()) {
+    const log = fs.createWriteStream(options.output);
+    for (let url of this._urlRegister.listAll()) {
       log.write(`${url}\n`);
     }
     log.end();

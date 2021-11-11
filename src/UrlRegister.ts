@@ -31,11 +31,12 @@ export class UrlRegister {
     return this.urls.get(cleanUrl);
   }
 
-  getAll() {
+  listAll() {
     return this.urls.values();
   }
 
-  remove(url: string) {
-
+  remove(stringUrl: string) {
+    const cleanUrl = this.cleanUrl(stringUrl);
+    this.urls.delete(cleanUrl);
   }
 }
