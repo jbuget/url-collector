@@ -2,10 +2,12 @@ import { Command } from 'commander';
 import puppeteer from 'puppeteer';
 import { LIB_VERSION } from './version';
 import * as fs from 'fs';
+import { UrlRegister } from './UrlRegister';
 
 export default class Program {
   private readonly _version: string;
   private readonly _command: Command;
+  private readonly _urlRegister: UrlRegister;
 
   constructor() {
     this._version = LIB_VERSION;
@@ -14,6 +16,7 @@ export default class Program {
       .version(this._version)
       .requiredOption('-u, --url <url>', 'URL to crawl')
       .option('-s, --screenshot <screenshot>', 'specify the screenshot filepath');
+    this._urlRegister = new UrlRegister();
   }
 
   async run(argv: string[]): Promise<void> {
@@ -48,20 +51,19 @@ export default class Program {
 
     await browser.close();
 
-    let links: string[] = anchors.reduce((accumulatedLinks: string[], href: string) => {
+    anchors.forEach((href: string) => {
       if (/^((http|https):\/\/)/.test(href)) {
-        accumulatedLinks.push(href);
+        this._urlRegister.register(href);
       }
       if (href.startsWith('/')) {
-        accumulatedLinks.push(url + href);
+        this._urlRegister.register(url + href);
       }
-      return accumulatedLinks;
-    }, []);
+    });
 
     // Output
     const log = fs.createWriteStream('tmp/links.csv', { flags: 'a' });
-    for (let link of links) {
-      log.write(`${link}\n`);
+    for (let url of this._urlRegister.getAll()) {
+      log.write(`${url}\n`);
     }
     log.end();
   }
