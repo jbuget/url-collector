@@ -34,10 +34,7 @@ export default class Program {
     });
     const page = await browser.newPage();
 
-    await page.setViewport({
-      width: 1920,
-      height: 1250,
-    });
+    await page.setViewport({ width: 0, height: 0 });
     await page.goto(url);
 
     const hrefs = await page.evaluate(
