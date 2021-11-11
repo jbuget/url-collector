@@ -38,17 +38,17 @@ export default class Program {
 
     await page.goto(url);
 
-    const hrefs = await page.evaluate(
+    const anchors = await page.evaluate(
       async () => Array.from(
         // @ts-ignore
         document.querySelectorAll('a[href]'),
-        (a: any) => a.getAttribute('href')
+        (anchor: any) => anchor.getAttribute('href')
       )
     );
 
     await browser.close();
 
-    let links: string[] = hrefs.reduce((accumulatedLinks: string[], href: string) => {
+    let links: string[] = anchors.reduce((accumulatedLinks: string[], href: string) => {
       if (/^((http|https):\/\/)/.test(href)) {
         accumulatedLinks.push(href);
       }
