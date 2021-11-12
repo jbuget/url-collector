@@ -53,7 +53,7 @@ export class Crawler {
 
       await browserPage.goto(currentPageUrl, { waitUntil: 'networkidle2' });
 
-      const anchors: string[] = await browserPage.evaluate(
+      const urls: string[] = await browserPage.evaluate(
         async () => {
           /*
             ⚠️ From here you are not in Node but in the browser.
@@ -65,21 +65,21 @@ export class Crawler {
         }
       );
 
-      const absoluteAnchors = anchors.map((anchor: string) => {
-        if (anchor && anchor.startsWith && anchor.startsWith('/')) {
-          return baseUrl + anchor;
+      const fullUrls = urls.map((url: string) => {
+        if (url && url.startsWith && url.startsWith('/')) {
+          return baseUrl + url;
         }
-        return anchor;
+        return url;
       })
-        .filter((anchor) => /^((http|https):\/\/)/.test(anchor))
-        .filter((anchor) => !(/.*\.(pdf|txt)$/i.test(anchor)));
+        .filter((url) => /^((http|https):\/\/)/.test(url))
+        .filter((url) => !(/.*\.(pdf|txt)$/i.test(url)));
 
-      absoluteAnchors.forEach((anchor: string) => {
-        this._urlRegistry.register(anchor);
+      fullUrls.forEach((url: string) => {
+        this._urlRegistry.register(url);
       });
 
-      for (const href of absoluteAnchors) {
-        await this.crawlInternal(browserPage, baseUrl, href);
+      for (const url of fullUrls) {
+        await this.crawlInternal(browserPage, baseUrl, url);
       }
     } catch (e) {
       console.error(`An error occurred crawling URL "${currentPageUrl}"`);
