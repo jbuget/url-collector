@@ -36,7 +36,7 @@ export class Crawler {
     }
   }
 
-  private async crawlInternal(page: Page, baseUrl: string, url: string) {
+  private async crawlInternal(browserPage: Page, baseUrl: string, url: string) {
 
     if (this._urlRegistry.isUrlAlreadyVisited(url)) {
       return;
@@ -51,9 +51,9 @@ export class Crawler {
 
       this._urlRegistry.markUrlAsVisited(url);
 
-      await page.goto(url, { waitUntil: 'networkidle2' });
+      await browserPage.goto(url, { waitUntil: 'networkidle2' });
 
-      const anchors: string[] = await page.evaluate(
+      const anchors: string[] = await browserPage.evaluate(
         async () => {
           /*
             ⚠️ From here you are not in Node but in the browser.
@@ -79,7 +79,7 @@ export class Crawler {
       });
 
       for (const href of absoluteAnchors) {
-        await this.crawlInternal(page, baseUrl, href);
+        await this.crawlInternal(browserPage, baseUrl, href);
       }
     } catch (e) {
       console.error(`An error occurred crawling URL "${url}"`);
