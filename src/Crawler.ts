@@ -1,13 +1,13 @@
 import { URL } from 'url';
-import { UrlRegister } from './UrlRegister';
+import { UrlRegistry } from './UrlRegistry';
 import puppeteer, { Page } from 'puppeteer';
 
 export class Crawler {
 
-  private readonly _urlRegister: UrlRegister;
+  private readonly _urlRegistry: UrlRegistry;
 
-  constructor(urlRegister: UrlRegister) {
-    this._urlRegister = urlRegister;
+  constructor(urlRegister: UrlRegistry) {
+    this._urlRegistry = urlRegister;
   }
 
   private static getUrlDomain(url: string) {
@@ -25,7 +25,7 @@ export class Crawler {
       const page = await browser.newPage();
       await page.setViewport({ width: 0, height: 0 });
 
-      await this._urlRegister.register(url);
+      await this._urlRegistry.register(url);
       await this.crawlInternal(page, url, url);
     } catch (e) {
       console.error(e);
@@ -38,7 +38,7 @@ export class Crawler {
 
   private async crawlInternal(page: Page, baseUrl: string, url: string) {
 
-    if (this._urlRegister.isUrlAlreadyVisited(url)) {
+    if (this._urlRegistry.isUrlAlreadyVisited(url)) {
       return;
     }
 
@@ -49,7 +49,7 @@ export class Crawler {
     try {
       console.log(`crawl page "${url}"`);
 
-      this._urlRegister.markUrlAsVisited(url);
+      this._urlRegistry.markUrlAsVisited(url);
 
       await page.goto(url, { waitUntil: 'networkidle2' });
 
@@ -75,7 +75,7 @@ export class Crawler {
         .filter((anchor) => !(/.*\.(pdf|txt)$/i.test(anchor)));
 
       absoluteAnchors.forEach((anchor: string) => {
-        this._urlRegister.register(anchor);
+        this._urlRegistry.register(anchor);
       });
 
       for (const href of absoluteAnchors) {

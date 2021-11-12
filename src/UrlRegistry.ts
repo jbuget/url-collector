@@ -14,7 +14,7 @@ export class CrawlPage {
   }
 }
 
-export class UrlRegister {
+export class UrlRegistry {
   private readonly urls: Map<string, CrawlPage>;
 
   constructor() {

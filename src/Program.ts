@@ -1,13 +1,13 @@
 import { Command } from 'commander';
 import { LIB_VERSION } from './version';
 import * as fs from 'fs';
-import { UrlRegister } from './UrlRegister';
+import { UrlRegistry } from './UrlRegistry';
 import { Crawler } from './Crawler';
 
 export default class Program {
   private readonly _version: string;
   private readonly _command: Command;
-  private readonly _urlRegister: UrlRegister;
+  private readonly _urlRegistry: UrlRegistry;
 
   constructor() {
     this._version = LIB_VERSION;
@@ -17,7 +17,7 @@ export default class Program {
       .requiredOption('-u, --url <url>', 'URL to crawl')
       .requiredOption('-o, --output <url>', 'specify the output file')
       .option('-s, --screenshot <screenshot>', 'specify the screenshot filepath');
-    this._urlRegister = new UrlRegister();
+    this._urlRegistry = new UrlRegistry();
   }
 
   async run(argv: string[]): Promise<void> {
@@ -32,12 +32,12 @@ export default class Program {
     url = url.replace(/\/$/, '');
 
     // Treatment
-    const crawler: Crawler = new Crawler(this._urlRegister);
+    const crawler: Crawler = new Crawler(this._urlRegistry);
     await crawler.crawl(url);
 
     // Output
     const log = fs.createWriteStream(options.output);
-    for (let crawledPage of this._urlRegister.listAll()) {
+    for (let crawledPage of this._urlRegistry.listAll()) {
       log.write(`${crawledPage.url}\n`);
     }
     log.end();
