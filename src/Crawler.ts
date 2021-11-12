@@ -15,6 +15,8 @@ export class Crawler {
   }
 
   async crawl(url: string) {
+    console.time(`Crawling`);
+
     const browser = await puppeteer.launch({
       headless: true,
       ignoreHTTPSErrors: true,
@@ -34,21 +36,13 @@ export class Crawler {
         await browser.close();
       }
     }
+    console.timeEnd(`Crawling`);
   }
 
   private async crawlInternal(browserPage: Page, baseUrl: string, currentPageUrl: string) {
-
-    if (this._urlRegistry.isUrlAlreadyVisited(currentPageUrl)) {
-      return;
-    }
-
-    if (Crawler.getUrlDomain(baseUrl) !== Crawler.getUrlDomain(currentPageUrl)) {
-      return;
-    }
+    console.log(`crawl page "${currentPageUrl}"`);
 
     try {
-      console.log(`crawl page "${currentPageUrl}"`);
-
       this._urlRegistry.markUrlAsVisited(currentPageUrl);
 
       await browserPage.goto(currentPageUrl, { waitUntil: 'networkidle2' });
@@ -79,7 +73,13 @@ export class Crawler {
       });
 
       for (const url of fullUrls) {
-        await this.crawlInternal(browserPage, baseUrl, url);
+        if (!this._urlRegistry.isUrlAlreadyVisited(url)) {
+          if (Crawler.getUrlDomain(baseUrl) === Crawler.getUrlDomain(currentPageUrl)) {
+            await this.crawlInternal(browserPage, baseUrl, url);
+          } else {
+            this._urlRegistry.markUrlAsVisited(url);
+          }
+        }
       }
     } catch (e) {
       console.error(`An error occurred crawling URL "${currentPageUrl}"`);
