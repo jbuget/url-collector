@@ -36,22 +36,22 @@ export class Crawler {
     }
   }
 
-  private async crawlInternal(browserPage: Page, baseUrl: string, url: string) {
+  private async crawlInternal(browserPage: Page, baseUrl: string, currentPageUrl: string) {
 
-    if (this._urlRegistry.isUrlAlreadyVisited(url)) {
+    if (this._urlRegistry.isUrlAlreadyVisited(currentPageUrl)) {
       return;
     }
 
-    if (Crawler.getUrlDomain(baseUrl) !== Crawler.getUrlDomain(url)) {
+    if (Crawler.getUrlDomain(baseUrl) !== Crawler.getUrlDomain(currentPageUrl)) {
       return;
     }
 
     try {
-      console.log(`crawl page "${url}"`);
+      console.log(`crawl page "${currentPageUrl}"`);
 
-      this._urlRegistry.markUrlAsVisited(url);
+      this._urlRegistry.markUrlAsVisited(currentPageUrl);
 
-      await browserPage.goto(url, { waitUntil: 'networkidle2' });
+      await browserPage.goto(currentPageUrl, { waitUntil: 'networkidle2' });
 
       const anchors: string[] = await browserPage.evaluate(
         async () => {
@@ -82,7 +82,7 @@ export class Crawler {
         await this.crawlInternal(browserPage, baseUrl, href);
       }
     } catch (e) {
-      console.error(`An error occurred crawling URL "${url}"`);
+      console.error(`An error occurred crawling URL "${currentPageUrl}"`);
       console.error(e);
     }
   }
