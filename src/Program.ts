@@ -1,8 +1,8 @@
 import { Command } from 'commander';
-import puppeteer from 'puppeteer';
 import { LIB_VERSION } from './version';
 import * as fs from 'fs';
 import { UrlRegister } from './UrlRegister';
+import { Crawler } from './Crawler';
 
 export default class Program {
   private readonly _version: string;
@@ -32,46 +32,13 @@ export default class Program {
     url = url.replace(/\/$/, '');
 
     // Treatment
-    const browser = await puppeteer.launch({
-      headless: false,
-      ignoreHTTPSErrors: true,
-      devtools: true
-    });
-    const page = await browser.newPage();
-
-    await page.setViewport({ width: 0, height: 0 });
-
-    await page.goto(url);
-
-    const anchors: string[] = await page.evaluate(
-      () => {
-        /*
-          ⚠️ From here you are not in Node but in the browser.
-          Set `devtools: true` in `puppeteer.launch` options to be able to debug.
-        */
-        return Array.from(
-          // @ts-ignore
-          document.querySelectorAll('a[href]'),
-          (anchor: any) => anchor.getAttribute('href')
-        );
-      }
-    );
-
-    await browser.close();
-
-    anchors.forEach((href: string) => {
-      if (/^((http|https):\/\/)/.test(href)) {
-        this._urlRegister.register(href);
-      }
-      if (href.startsWith('/')) {
-        this._urlRegister.register(url + href);
-      }
-    });
+    const crawler: Crawler = new Crawler(this._urlRegister);
+    await crawler.crawl(url);
 
     // Output
     const log = fs.createWriteStream(options.output);
-    for (let url of this._urlRegister.listAll()) {
-      log.write(`${url}\n`);
+    for (let crawledPage of this._urlRegister.listAll()) {
+      log.write(`${crawledPage.url}\n`);
     }
     log.end();
   }

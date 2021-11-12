@@ -1,10 +1,24 @@
 const { URL } = require('url');
 
+export class CrawlPage {
+  url: string;
+  crawled: boolean;
+
+  constructor(url: string) {
+    this.url = url;
+    this.crawled = false;
+  }
+
+  markAsCrawled() {
+    this.crawled = true;
+  }
+}
+
 export class UrlRegister {
-  private readonly urls: Map<string, string>;
+  private readonly urls: Map<string, CrawlPage>;
 
   constructor() {
-    this.urls = new Map<string, string>();
+    this.urls = new Map<string, CrawlPage>();
   }
 
   cleanUrl(stringUrl: string): string {
@@ -12,31 +26,42 @@ export class UrlRegister {
   }
 
   register(stringUrl: string) {
+    const cleanUrl = this.cleanUrl(stringUrl);
+    if (!!this.urls.get(cleanUrl)) {
+      return;
+    }
+
     try {
       const protocols = ['http', 'https'];
-      const cleanUrl = this.cleanUrl(stringUrl);
       const urlObject = new URL(cleanUrl);
       const isValidUrl = protocols.map(x => `${x.toLowerCase()}:`).includes(urlObject.protocol);
       if (isValidUrl) {
-        this.urls.set(cleanUrl, cleanUrl);
+        const crawlPage = new CrawlPage(cleanUrl);
+        this.urls.set(cleanUrl, crawlPage);
       }
     } catch (err) {
       throw new Error(`Can not register url "${stringUrl}"`);
     }
-
-  }
-
-  resolve(stringUrl: string) {
-    const cleanUrl = this.cleanUrl(stringUrl);
-    return this.urls.get(cleanUrl);
   }
 
   listAll() {
     return this.urls.values();
   }
 
-  remove(stringUrl: string) {
+  isUrlAlreadyVisited(stringUrl: string) {
     const cleanUrl = this.cleanUrl(stringUrl);
-    this.urls.delete(cleanUrl);
+    const crawlPage = this.urls.get(cleanUrl);
+    if (crawlPage) {
+      return crawlPage.crawled;
+    }
+    return false;
+  }
+
+  markUrlAsVisited(stringUrl: string) {
+    const cleanUrl = this.cleanUrl(stringUrl);
+    const crawlPage = this.urls.get(cleanUrl);
+    if (crawlPage) {
+      crawlPage.markAsCrawled();
+    }
   }
 }
