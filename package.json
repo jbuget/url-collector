@@ -36,7 +36,8 @@
   },
   "dependencies": {
     "commander": "^8.2.0",
-    "puppeteer": "^10.4.0"
+    "puppeteer": "^10.4.0",
+    "puppeteer-cluster": "^0.22.0"
   },
   "devDependencies": {
     "@types/node": "^16.10.3",

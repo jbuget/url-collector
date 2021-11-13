@@ -1,4 +1,4 @@
-import { Browser } from 'puppeteer';
+import { Page } from 'puppeteer';
 import { UrlRegistry } from './UrlRegistry';
 import { URL } from 'url';
 import { Crawler } from './Crawler';
@@ -7,14 +7,14 @@ export class Spider {
 
   crawler: Crawler;
   registry: UrlRegistry;
-  browser: Browser;
+  page: Page;
   baseUrl: string;
   pageUrl: string;
 
-  constructor(crawler: Crawler, registry: UrlRegistry, browser: Browser, baseUrl: string, pageUrl: string) {
+  constructor(crawler: Crawler, registry: UrlRegistry, page: Page, baseUrl: string, pageUrl: string) {
     this.crawler = crawler;
     this.registry = registry;
-    this.browser = browser;
+    this.page = page;
     this.baseUrl = baseUrl;
     this.pageUrl = pageUrl;
   }
@@ -24,15 +24,18 @@ export class Spider {
   }
 
   async crawlInternal() {
+    // Simple check when running multiple spiders in parallel
+    if (this.registry.isUrlAlreadyVisited(this.pageUrl)) {
+      return
+    }
+
     try {
       console.log(`crawl page "${this.pageUrl}"`);
       this.registry.markUrlAsVisited(this.pageUrl);
 
-      const page = await this.browser.newPage();
-      await page.setViewport({ width: 0, height: 0 });
-      await page.goto(this.pageUrl, { waitUntil: 'networkidle2' });
+      await this.page.goto(this.pageUrl, { waitUntil: 'networkidle2' });
 
-      const urls: string[] = await page.evaluate(
+      const urls: string[] = await this.page.evaluate(
         async () => {
           /*
             ⚠️ From here you are not in Node but in the browser.
@@ -62,12 +65,12 @@ export class Spider {
         this.registry.register(url);
       });
 
-      await page.close();
+      //await this.page.close();
 
       for (const url of fullUrls) {
         if (Spider.getUrlDomain(this.baseUrl) === Spider.getUrlDomain(url)
           && !this.registry.isUrlAlreadyVisited(url)) {
-          await this.crawler.crawlInternal(this.browser, this.baseUrl, url);
+          await this.crawler.crawlInternal(url);
         } else {
           this.registry.markUrlAsVisited(url);
         }

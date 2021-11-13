@@ -1,40 +1,53 @@
-import { URL } from 'url';
 import { UrlRegistry } from './UrlRegistry';
-import puppeteer, { Browser } from 'puppeteer';
 import { Spider } from './Spider';
+import { Cluster } from 'puppeteer-cluster';
 
 export class Crawler {
 
   private readonly _urlRegistry: UrlRegistry;
+  private readonly _baseUrl: string;
+  private _cluster?: Cluster;
 
-  constructor(urlRegister: UrlRegistry) {
+  constructor(urlRegister: UrlRegistry, baseUrl: string) {
     this._urlRegistry = urlRegister;
+    this._baseUrl = baseUrl;
   }
 
-  async crawl(url: string) {
-    console.time(`Crawling`);
-
-    const browser = await puppeteer.launch({
-      headless: true,
-      ignoreHTTPSErrors: true,
-      devtools: false,
+  async init() {
+    this._cluster = await Cluster.launch({
+      concurrency: Cluster.CONCURRENCY_CONTEXT,
+      maxConcurrency: 10,
+      puppeteerOptions: {
+        // @ts-ignore
+        ignoreHTTPSErrors: true,
+        headless: true,
+      }
     });
 
+    await this._cluster.task(async ({ page, data: url }) => {
+      // crawler: Crawler, registry: UrlRegistry, browser: Browser, baseUrl: string, pageUrl: string
+      const spider: Spider = new Spider(this, this._urlRegistry, page, this._baseUrl, url);
+      await spider.crawlInternal();
+    });
+
+  }
+
+  async crawl() {
+    console.time(`Crawling`);
+
     try {
-      await this._urlRegistry.register(url);
-      await this.crawlInternal(browser, url, url);
+      await this._urlRegistry.register(this._baseUrl);
+      await this.crawlInternal(this._baseUrl);
     } catch (e) {
       console.error(e);
     } finally {
-      if (browser.isConnected()) {
-        await browser.close();
-      }
+      await this._cluster?.idle();
+      await this._cluster?.close();
     }
     console.timeEnd(`Crawling`);
   }
 
-  async crawlInternal(browser: Browser, baseUrl: string, url: string) {
-    const spider: Spider = new Spider(this, this._urlRegistry, browser, baseUrl, url);
-    await spider.crawlInternal();
+  async crawlInternal(url: string) {
+    this._cluster?.queue(url);
   }
 }
