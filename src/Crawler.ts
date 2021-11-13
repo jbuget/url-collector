@@ -10,7 +10,7 @@ export class Crawler {
 
   constructor(urlRegister: UrlRegistry, baseUrl: string) {
     this._urlRegistry = urlRegister;
-    this._baseUrl = baseUrl;
+    this._baseUrl = baseUrl.replace(/\/$/, '');
   }
 
   async init() {
