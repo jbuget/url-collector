@@ -52,7 +52,7 @@ export class Spider {
             .from(links, (anchor: any) => anchor.getAttribute('href'))
             .filter((href) => {
               if (!href) return false;
-              if (!href.startsWith || href.startsWith('//')) return false;
+              if (!href.startsWith || href.startsWith('//') || href.startsWith('#')) return false;
               if (/.*\.(pdf|txt)$/i.test(href)) return false;
               return true;
             });
@@ -60,10 +60,14 @@ export class Spider {
       );
 
       const fullUrls = urls.map((url: string) => {
+        let fullUrl;
         if (url && url.startsWith && url.startsWith('/')) {
-          return this.baseUrl + url;
+          fullUrl = this.baseUrl + url;
+        } else {
+          fullUrl = url;
         }
-        return url;
+        fullUrl = fullUrl.split('?')[0];
+        return fullUrl;
       });
 
       fullUrls.forEach((url: string) => {
