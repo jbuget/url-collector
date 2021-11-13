@@ -35,6 +35,11 @@ export class Spider {
 
       await this.page.goto(this.pageUrl, { waitUntil: 'networkidle2' });
 
+      // Take into account the case of a redirection outside the base URL domain
+      if (Spider.getUrlDomain(this.baseUrl) !== Spider.getUrlDomain(this.page.url())) {
+        return;
+      }
+
       const urls: string[] = await this.page.evaluate(
         async () => {
           /*
@@ -46,8 +51,8 @@ export class Spider {
           return Array
             .from(links, (anchor: any) => anchor.getAttribute('href'))
             .filter((href) => {
-              if (!href || href.trim().length === 0) return false;
-              if (href.startsWith('//')) return false;
+              if (!href) return false;
+              if (!href.startsWith || href.startsWith('//')) return false;
               if (/.*\.(pdf|txt)$/i.test(href)) return false;
               return true;
             });

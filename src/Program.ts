@@ -29,7 +29,6 @@ export default class Program {
     if (!url) {
       throw 'Please provide a URL as the last argument';
     }
-    url = url.replace(/\/$/, '');
 
     // Treatment
     const crawler: Crawler = new Crawler(this._urlRegistry, url);
