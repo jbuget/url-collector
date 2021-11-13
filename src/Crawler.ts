@@ -1,6 +1,6 @@
 import { URL } from 'url';
 import { UrlRegistry } from './UrlRegistry';
-import puppeteer, { Page } from 'puppeteer';
+import puppeteer, { Browser } from 'puppeteer';
 
 export class Crawler {
 
@@ -18,17 +18,15 @@ export class Crawler {
     console.time(`Crawling`);
 
     const browser = await puppeteer.launch({
-      headless: true,
+      headless: false,
       ignoreHTTPSErrors: true,
       devtools: false,
     });
 
     try {
-      const page = await browser.newPage();
-      await page.setViewport({ width: 0, height: 0 });
 
       await this._urlRegistry.register(url);
-      await this.crawlInternal(page, url, url);
+      await this.crawlInternal(browser, url, url);
     } catch (e) {
       console.error(e);
     } finally {
@@ -39,15 +37,17 @@ export class Crawler {
     console.timeEnd(`Crawling`);
   }
 
-  private async crawlInternal(browserPage: Page, baseUrl: string, currentPageUrl: string) {
+  private async crawlInternal(browser: Browser, baseUrl: string, currentPageUrl: string) {
     console.log(`crawl page "${currentPageUrl}"`);
 
     try {
       this._urlRegistry.markUrlAsVisited(currentPageUrl);
 
-      await browserPage.goto(currentPageUrl, { waitUntil: 'networkidle2' });
+      const page = await browser.newPage();
+      await page.setViewport({ width: 0, height: 0 });
+      await page.goto(currentPageUrl, { waitUntil: 'networkidle2' });
 
-      const urls: string[] = await browserPage.evaluate(
+      const urls: string[] = await page.evaluate(
         async () => {
           /*
             ⚠️ From here you are not in Node but in the browser.
@@ -72,13 +72,14 @@ export class Crawler {
         this._urlRegistry.register(url);
       });
 
+      await page.close();
+
       for (const url of fullUrls) {
-        if (!this._urlRegistry.isUrlAlreadyVisited(url)) {
-          if (Crawler.getUrlDomain(baseUrl) === Crawler.getUrlDomain(currentPageUrl)) {
-            await this.crawlInternal(browserPage, baseUrl, url);
-          } else {
-            this._urlRegistry.markUrlAsVisited(url);
-          }
+        if (Crawler.getUrlDomain(baseUrl) === Crawler.getUrlDomain(url)
+          && !this._urlRegistry.isUrlAlreadyVisited(url)) {
+          await this.crawlInternal(browser, baseUrl, url);
+        } else {
+          this._urlRegistry.markUrlAsVisited(url);
         }
       }
     } catch (e) {
