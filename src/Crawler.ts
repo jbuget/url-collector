@@ -53,7 +53,14 @@ export class Crawler {
           */
           // @ts-ignore
           const links = document.querySelectorAll('a[href]');
-          return Array.from(links, (anchor: any) => anchor.getAttribute('href'));
+          return Array
+            .from(links, (anchor: any) => anchor.getAttribute('href'))
+            .filter((href) => {
+              if (!href || href.trim().length === 0) return false;
+              if (href.startsWith('//')) return false;
+              if (/.*\.(pdf|txt)$/i.test(href)) return false;
+              return true;
+            });
         }
       );
 
@@ -62,9 +69,7 @@ export class Crawler {
           return baseUrl + url;
         }
         return url;
-      })
-        .filter((url) => /^((http|https):\/\/)/.test(url))
-        .filter((url) => !(/.*\.(pdf|txt)$/i.test(url)));
+      });
 
       fullUrls.forEach((url: string) => {
         this._urlRegistry.register(url);
