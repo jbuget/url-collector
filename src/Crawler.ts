@@ -1,6 +1,7 @@
 import { URL } from 'url';
 import { UrlRegistry } from './UrlRegistry';
 import puppeteer, { Browser } from 'puppeteer';
+import { Spider } from './Spider';
 
 export class Crawler {
 
@@ -10,15 +11,11 @@ export class Crawler {
     this._urlRegistry = urlRegister;
   }
 
-  private static getUrlDomain(url: string) {
-    return new URL(url).hostname;
-  }
-
   async crawl(url: string) {
     console.time(`Crawling`);
 
     const browser = await puppeteer.launch({
-      headless: false,
+      headless: true,
       ignoreHTTPSErrors: true,
       devtools: false,
     });
@@ -36,58 +33,8 @@ export class Crawler {
     console.timeEnd(`Crawling`);
   }
 
-  private async crawlInternal(browser: Browser, baseUrl: string, currentPageUrl: string) {
-    try {
-      console.log(`crawl page "${currentPageUrl}"`);
-      this._urlRegistry.markUrlAsVisited(currentPageUrl);
-
-      const page = await browser.newPage();
-      await page.setViewport({ width: 0, height: 0 });
-      await page.goto(currentPageUrl, { waitUntil: 'networkidle2' });
-
-      const urls: string[] = await page.evaluate(
-        async () => {
-          /*
-            ⚠️ From here you are not in Node but in the browser.
-            Set `devtools: true` in `puppeteer.launch` options to be able to debug.
-          */
-          // @ts-ignore
-          const links = document.querySelectorAll('a[href]');
-          return Array
-            .from(links, (anchor: any) => anchor.getAttribute('href'))
-            .filter((href) => {
-              if (!href || href.trim().length === 0) return false;
-              if (href.startsWith('//')) return false;
-              if (/.*\.(pdf|txt)$/i.test(href)) return false;
-              return true;
-            });
-        }
-      );
-
-      const fullUrls = urls.map((url: string) => {
-        if (url && url.startsWith && url.startsWith('/')) {
-          return baseUrl + url;
-        }
-        return url;
-      });
-
-      fullUrls.forEach((url: string) => {
-        this._urlRegistry.register(url);
-      });
-
-      await page.close();
-
-      for (const url of fullUrls) {
-        if (Crawler.getUrlDomain(baseUrl) === Crawler.getUrlDomain(url)
-          && !this._urlRegistry.isUrlAlreadyVisited(url)) {
-          await this.crawlInternal(browser, baseUrl, url);
-        } else {
-          this._urlRegistry.markUrlAsVisited(url);
-        }
-      }
-    } catch (e) {
-      console.error(`An error occurred crawling URL "${currentPageUrl}"`);
-      console.error(e);
-    }
+  async crawlInternal(browser: Browser, baseUrl: string, url: string) {
+    const spider: Spider = new Spider(this, this._urlRegistry, browser, baseUrl, url);
+    await spider.crawlInternal();
   }
 }
