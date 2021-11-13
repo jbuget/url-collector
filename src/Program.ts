@@ -32,8 +32,9 @@ export default class Program {
     url = url.replace(/\/$/, '');
 
     // Treatment
-    const crawler: Crawler = new Crawler(this._urlRegistry);
-    await crawler.crawl(url);
+    const crawler: Crawler = new Crawler(this._urlRegistry, url);
+    await crawler.init();
+    await crawler.crawl();
 
     // Output
     const log = fs.createWriteStream(options.output);
