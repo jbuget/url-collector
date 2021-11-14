@@ -35,7 +35,10 @@
     "postversion": "git push && git push --tags"
   },
   "dependencies": {
+    "@types/jsdom": "^16.2.13",
     "commander": "^8.2.0",
+    "got": "^11.8.2",
+    "jsdom": "^18.1.0",
     "puppeteer": "^10.4.0",
     "puppeteer-cluster": "^0.22.0"
   },

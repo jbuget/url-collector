@@ -3,7 +3,7 @@ import { UrlRegistry } from './UrlRegistry';
 import { URL } from 'url';
 import { Crawler } from './Crawler';
 
-export class Spider {
+export class SpaSpider {
 
   crawler: Crawler;
   registry: UrlRegistry;
@@ -37,7 +37,7 @@ export class Spider {
       await this.page.waitForSelector('a[href]');
 
       // Take into account the case of a redirection outside the base URL domain
-      if (Spider.getUrlDomain(this.baseUrl) !== Spider.getUrlDomain(this.page.url())) {
+      if (SpaSpider.getUrlDomain(this.baseUrl) !== SpaSpider.getUrlDomain(this.page.url())) {
         return;
       }
 
@@ -65,7 +65,12 @@ export class Spider {
         if (url && url.startsWith && url.startsWith('/')) {
           fullUrl = this.baseUrl + url;
         } else {
-          fullUrl = url;
+          if (/(http:\/\/|https:\/\/)/i.test(url)) {
+            fullUrl = url;
+          }
+          else {
+            fullUrl = `https://${url}`;
+          }
         }
         fullUrl = fullUrl.split('?')[0];
         return fullUrl;
@@ -78,7 +83,7 @@ export class Spider {
       //await this.page.close();
 
       for (const url of fullUrls) {
-        if (Spider.getUrlDomain(this.baseUrl) === Spider.getUrlDomain(url)
+        if (SpaSpider.getUrlDomain(this.baseUrl) === SpaSpider.getUrlDomain(url)
           && !this.registry.isUrlAlreadyVisited(url)) {
           await this.crawler.crawlInternal(url);
         } else {

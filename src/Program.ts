@@ -32,7 +32,6 @@ export default class Program {
 
     // Treatment
     const crawler: Crawler = new Crawler(this._urlRegistry, url);
-    await crawler.init();
     await crawler.crawl();
 
     // Output
