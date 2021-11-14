@@ -33,7 +33,8 @@ export class Spider {
       console.log(`crawl page "${this.pageUrl}"`);
       this.registry.markUrlAsVisited(this.pageUrl);
 
-      await this.page.goto(this.pageUrl, { waitUntil: 'networkidle2' });
+      await this.page.goto(this.pageUrl, { waitUntil: 'domcontentloaded' });
+      await this.page.waitForSelector('a[href]');
 
       // Take into account the case of a redirection outside the base URL domain
       if (Spider.getUrlDomain(this.baseUrl) !== Spider.getUrlDomain(this.page.url())) {
